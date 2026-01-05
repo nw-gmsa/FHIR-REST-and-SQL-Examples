@@ -9,7 +9,6 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 import fhirclient.models.meta as meta
-from fhirclient.models.fhirinstant import FHIRInstant
 import fhirclient.models.servicerequest as sr
 import fhirclient.models.specimen as sp
 import fhirclient.models.diagnosticreport as dr
