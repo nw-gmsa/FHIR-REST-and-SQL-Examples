@@ -5,6 +5,9 @@ import plotly.express as px
 from dash_app.data.rest import dfReports, df, dfmelt
 import dash_bootstrap_components as dbc
 
+
+# convert to share data between callbacks https://dash.plotly.com/sharing-data-between-callbacks
+
 dash.register_page(__name__,title="Reports", name="Reports REST", path="/")
 
 
