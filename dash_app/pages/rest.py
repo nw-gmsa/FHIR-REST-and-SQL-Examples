@@ -52,6 +52,11 @@ layout = html.Div([
     ]),
     dbc.Row([
         dbc.Col([
+            dcc.Graph(id='specimenTimeLine'),
+        ]),
+    ]),
+    dbc.Row([
+        dbc.Col([
             dcc.Graph(id='specimens'),
         ]),
         dbc.Col([
@@ -274,6 +279,28 @@ def releaseLine(_value):
         x="ReportLastUpdatedDate",
         y="releaseDurationMin",
         title="Release Duration over time"
+    )
+    return figE
+
+@callback(
+    Output('specimenTimeLine', 'figure'),
+    Input('intermediate-value', 'data')
+)
+def specimenTimeLine(_value):
+    if _value is None:
+        return dash.no_update
+    print("specimenTimeLine called")
+    datasets = json.loads(_value)
+    df = pd.read_json(datasets['df'], orient='split')
+    dfS = df[['SpecimenReceivedDate', 'testingDuration']]
+    dfS = dfS.dropna(subset=['SpecimenReceivedDate'])
+    dfS = dfS.sort_values('SpecimenReceivedDate')
+    # Now the scatter plot will work as expected
+    figE = px.scatter(
+        dfS,
+        x="SpecimenReceivedDate",
+        y="testingDuration",
+        title="Time from Specimen received to Report Authorised"
     )
     return figE
 
