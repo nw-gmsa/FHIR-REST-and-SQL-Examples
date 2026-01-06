@@ -14,6 +14,7 @@ import fhirclient.models.specimen as sp
 import fhirclient.models.diagnosticreport as dr
 from dotenv import load_dotenv
 from dateutil import parser
+from datetime import datetime
 
 def performer(my_list):
     performer = ""
@@ -217,14 +218,8 @@ fhir_password = os.getenv("FHIR_PASSWORD")
 fhir_username = os.getenv("FHIR_USERNAME")
 server = os.getenv("FHIR_SERVER")
 
-
-
-@callback(
-    Output('intermediate-value', 'data'),
-    Input('load-button', 'n_clicks'),
-    prevent_initial_call=True
-)
 def load_and_aggregate_data(n):
+    print("load_and_aggregate_data called")
 
     # Look at replacing with https://dash.plotly.com/live-updates
     df = getInitialData()
@@ -255,12 +250,36 @@ def load_and_aggregate_data(n):
 
     return json.dumps(datasets)
 
+@callback(
+    Output('updated', 'children'),
+          Output('intermediate-value', 'data'),
+          Input('interval-component', 'n_intervals'))
+def update_metrics(n):
+    print("update_metrics called")
+    print(n)
+    updated = [html.P('Last updated ' +str(datetime.now()))]
+    return updated,load_and_aggregate_data(n)
+
+
+#@callback(
+#    Output('intermediate-value2', 'data'),
+#    Input('load-button', 'n_clicks'),
+#    prevent_initial_call=True
+#)
+#def load_button(n):
+#    print("load_button called")
+#    return None
+
+
+
 
 @callback(
     Output('reportsByRequester', 'figure'),
     Input('intermediate-value', 'data'))
 def reportsByRequester(_value):
     print("reportsByRequester called")
+    if _value is None:
+        return dash.no_update
     datasets = json.loads(_value)
     df = pd.read_json(datasets['df'], orient='split')
     dfReports = df.groupby(['requesterCode', 'codingCode']).size().reset_index(name='count')
@@ -275,6 +294,8 @@ def reportsByRequester(_value):
     Input('intermediate-value', 'data'))
 def reportsByTestCode(_value):
     print("reportsByTestCode called")
+    if _value is None:
+        return dash.no_update
     datasets = json.loads(_value)
     df = pd.read_json(datasets['df'], orient='split')
     dfReports = df.groupby(['requesterCode', 'codingCode']).size().reset_index(name='count')
@@ -287,6 +308,8 @@ def reportsByTestCode(_value):
 )
 def durations(_value):
     print("durations called")
+    if _value is None:
+        return dash.no_update
     datasets = json.loads(_value)
     df = pd.read_json(datasets['df'], orient='split')
     dfS = df[['SpecimenReceivedDate', 'testingDuration', 'codingCode']]
@@ -308,7 +331,10 @@ def durations(_value):
     Input('intermediate-value', 'data')
 )
 def specimensByNHS(_value):
+    if _value is None:
+        return dash.no_update
     datasets = json.loads(_value)
+
     df = pd.read_json(datasets['df'], orient='split')
     dfS = df[['OrderAuthoredOnDate', 'OrderToSpecimenReceivedDuration', 'requesterCode']]
     dfS = dfS.dropna(subset=['OrderAuthoredOnDate'])
@@ -330,6 +356,8 @@ def specimensByNHS(_value):
     Input('intermediate-value', 'data')
 )
 def specimensByCode(_value):
+    if _value is None:
+        return dash.no_update
     datasets = json.loads(_value)
     df = pd.read_json(datasets['df'], orient='split')
     dfS = df[['OrderAuthoredOnDate', 'OrderToSpecimenReceivedDuration', 'codingCode']]
@@ -352,6 +380,8 @@ def specimensByCode(_value):
     Input('intermediate-value', 'data')
 )
 def release(_value):
+    if _value is None:
+        return dash.no_update
     datasets = json.loads(_value)
     df = pd.read_json(datasets['df'], orient='split')
     dfS = df[['ReportIssuedDate', 'releaseDuration', 'codingCode']]
@@ -371,6 +401,8 @@ def release(_value):
     Input('intermediate-value', 'data')
 )
 def releaseLine(_value):
+    if _value is None:
+        return dash.no_update
     datasets = json.loads(_value)
     df = pd.read_json(datasets['df'], orient='split')
     dfS = df[['ReportLastUpdatedDate', 'releaseDurationMin']]
@@ -390,6 +422,8 @@ def releaseLine(_value):
     Input('intermediate-value', 'data')
 )
 def lines(_value):
+    if _value is None:
+        return dash.no_update
     datasets = json.loads(_value)
     dfmelt = pd.read_json(datasets['dfmelt'], orient='split')
     figL = px.bar(dfmelt,x="date", y="Count", color="DateType",  title="Timeline overview for sent reports")
@@ -400,7 +434,12 @@ layout = html.Div([
     html.H1("Graphs (REST)"),
     dbc.Row([
         dcc.Store(id='intermediate-value'),
-        html.Button('Load Data or Refresh', id='load-button')
+        dcc.Interval(
+            id='interval-component',
+            interval=2*60*1000, # in milliseconds
+            n_intervals=0
+        ),
+        html.Label(id='updated')
     ]),
     dbc.Row([
         dbc.Col([
