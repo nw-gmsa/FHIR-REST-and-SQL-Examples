@@ -1,3 +1,5 @@
+import io
+
 import dash
 from dash import html, dcc, callback, Input, Output, ALL
 import plotly.express as px
@@ -15,6 +17,7 @@ import fhirclient.models.diagnosticreport as dr
 from dotenv import load_dotenv
 from dateutil import parser
 from datetime import datetime
+
 
 
 
@@ -152,7 +155,7 @@ def reportsByRequester(_value):
     if _value is None:
         return dash.no_update
     datasets = json.loads(_value)
-    df = pd.read_json(datasets['df'], orient='split')
+    df = pd.read_json(io.StringIO(datasets['df']),orient='split')
     dfReports = df.groupby(['requesterCode', 'codingCode']).size().reset_index(name='count')
     dfReports.sort_values('count', inplace=True, ascending=False)
 
@@ -168,7 +171,7 @@ def reportsByTestCode(_value):
     if _value is None:
         return dash.no_update
     datasets = json.loads(_value)
-    df = pd.read_json(datasets['df'], orient='split')
+    df = pd.read_json(io.StringIO(datasets['df']),orient='split')
     dfReports = df.groupby(['requesterCode', 'codingCode']).size().reset_index(name='count')
     figTC = px.bar(dfReports, x="codingCode", y="count", color="requesterCode", title="Report Sent by Test Code")
     return figTC
@@ -182,7 +185,7 @@ def durations(_value):
     if _value is None:
         return dash.no_update
     datasets = json.loads(_value)
-    df = pd.read_json(datasets['df'], orient='split')
+    df = pd.read_json(io.StringIO(datasets['df']),orient='split')
     dfS = df[['SpecimenReceivedDate', 'testingDuration', 'codingCode']]
     dfS = dfS.dropna(subset=['SpecimenReceivedDate'])
     dfS['SpecimenReceivedDate'] = pd.to_datetime(dfS['SpecimenReceivedDate'], utc=True).dt.tz_localize(None)
@@ -208,7 +211,7 @@ def specimensByNHS(_value):
         return dash.no_update
     datasets = json.loads(_value)
 
-    df = pd.read_json(datasets['df'], orient='split')
+    df = pd.read_json(io.StringIO(datasets['df']),orient='split')
     dfS = df[['OrderDate', 'OrderToSpecimenReceivedDuration', 'requesterCode']]
     dfS = dfS.dropna(subset=['OrderDate'])
     dfS = dfS.groupby(['OrderDate', 'OrderToSpecimenReceivedDuration', 'requesterCode']).size().reset_index(name='counts')
@@ -233,7 +236,7 @@ def specimensByCode(_value):
     if _value is None:
         return dash.no_update
     datasets = json.loads(_value)
-    df = pd.read_json(datasets['df'], orient='split')
+    df = pd.read_json(io.StringIO(datasets['df']),orient='split')
     dfS = df[['OrderDate', 'OrderToSpecimenReceivedDuration', 'codingCode']]
     dfS = dfS.dropna(subset=['OrderDate'])
     dfS = dfS.groupby(['OrderDate', 'OrderToSpecimenReceivedDuration', 'codingCode']).size().reset_index(name='counts')
@@ -257,7 +260,7 @@ def release(_value):
     if _value is None:
         return dash.no_update
     datasets = json.loads(_value)
-    df = pd.read_json(datasets['df'], orient='split')
+    df = pd.read_json(io.StringIO(datasets['df']),orient='split')
     dfS = df[['ReportIssuedDate', 'releaseDuration', 'codingCode']]
     dfS = dfS.dropna(subset=['ReportIssuedDate'])
     dfS = dfS.groupby(['ReportIssuedDate', 'releaseDuration', 'codingCode']).size().reset_index(name='counts')
@@ -280,7 +283,7 @@ def releaseLine(_value):
     if _value is None:
         return dash.no_update
     datasets = json.loads(_value)
-    df = pd.read_json(datasets['df'], orient='split')
+    df = pd.read_json(io.StringIO(datasets['df']),orient='split')
     dfS = df[['ReportLastUpdatedDate', 'releaseDurationMin']]
     dfS = dfS.dropna(subset=['ReportLastUpdatedDate'])
     dfS['ReportLastUpdatedDate'] = pd.to_datetime(dfS['ReportLastUpdatedDate'], utc=True).dt.tz_localize(None)
@@ -304,7 +307,7 @@ def orderTimeLine(_value):
     if _value is None:
         return dash.no_update
     datasets = json.loads(_value)
-    df = pd.read_json(datasets['df'], orient='split')
+    df = pd.read_json(io.StringIO(datasets['df']),orient='split')
     dfS = df[['OrderDate', 'OrderToSpecimenReceivedDuration']]
     dfS = dfS.dropna(subset=['OrderDate'])
     dfS['OrderDate'] = pd.to_datetime(dfS['OrderDate'], utc=True).dt.tz_localize(None)
@@ -328,7 +331,7 @@ def specimenTimeLine(_value):
         return dash.no_update
     print("specimenTimeLine called")
     datasets = json.loads(_value)
-    df = pd.read_json(datasets['df'], orient='split')
+    df = pd.read_json(io.StringIO(datasets['df']),orient='split')
     dfS = df[['SpecimenReceivedDate', 'testingDuration']]
     dfS = dfS.dropna(subset=['SpecimenReceivedDate'])
     dfS['SpecimenReceivedDate'] = pd.to_datetime(dfS['SpecimenReceivedDate'], utc=True).dt.tz_localize(None)
@@ -351,7 +354,7 @@ def lines(_value):
     if _value is None:
         return dash.no_update
     datasets = json.loads(_value)
-    dfmelt = pd.read_json(datasets['dfmelt'], orient='split')
+    dfmelt = pd.read_json(io.StringIO(datasets['dfmelt']),orient='split')
     figL = px.bar(dfmelt,x="date", y="Count", color="DateType",  title="Timeline overview for sent reports")
     return figL
 

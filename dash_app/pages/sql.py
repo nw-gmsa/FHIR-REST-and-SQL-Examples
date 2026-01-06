@@ -2,6 +2,7 @@ import json
 
 import dash
 import pandas as pd
+import io
 from dash import html, dcc, callback, Input, Output, ALL
 import intersystems_iris.dbapi._DBAPI as dbapi
 from dotenv import load_dotenv
@@ -94,7 +95,7 @@ def resourceTable(_value):
         return dash.no_update
     print("has Data")
     datasets = json.loads(_value)
-    df = pd.read_json(datasets['dfResource'], orient='split')
+    df = pd.read_json(io.StringIO(datasets['dfResource']),orient='split')
     data = df.to_dict('records')
     return data, [{"name": i, "id": i} for i in df.columns]
 
@@ -109,7 +110,7 @@ def organisationTable(_value):
         return dash.no_update
     print("has Data")
     datasets = json.loads(_value)
-    df = pd.read_json(datasets['dfOrg'], orient='split')
+    df = pd.read_json(io.StringIO(datasets['dfOrg']),orient='split')
     data = df.to_dict('records')
     return data, [{"name": i, "id": i} for i in df.columns]
 
@@ -124,7 +125,7 @@ def icsTable(_value):
         return dash.no_update
     print("has Data")
     datasets = json.loads(_value)
-    df = pd.read_json(datasets['dfICS'], orient='split')
+    df = pd.read_json(io.StringIO(datasets['dfICS']),orient='split')
     data = df.to_dict('records')
     return data, [{"name": i, "id": i} for i in df.columns]
 
