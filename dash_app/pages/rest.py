@@ -179,6 +179,7 @@ def getInitialData():
     df['requestedDuration'] = (df['ReportIssuedDate'] - df['OrderAuthoredOnDate']).dt.days
 
     df['releaseDuration'] = (df['ReportLastUpdatedDate'] - df['ReportIssuedDate']).dt.days
+    df['releaseDurationMin'] = (df['ReportLastUpdatedDate'] - df['ReportIssuedDate']).dt.total_seconds() / 60
     df['testingDuration'] = (df['ReportIssuedDate'] - df['SpecimenReceivedDate']).dt.days
     df['OrderToSpecimenReceivedDuration'] = (df['SpecimenReceivedDate'] - df['OrderAuthoredOnDate']).dt.days
 
@@ -365,6 +366,24 @@ def release(_value):
         title="Time from Report Release to Report Sent"
     )
     return figE
+@callback(
+    Output('releaseLine', 'figure'),
+    Input('intermediate-value', 'data')
+)
+def releaseLine(_value):
+    datasets = json.loads(_value)
+    df = pd.read_json(datasets['df'], orient='split')
+    dfS = df[['ReportLastUpdatedDate', 'releaseDurationMin']]
+    dfS = dfS.dropna(subset=['ReportLastUpdatedDate'])
+    dfS = dfS.sort_values('releaseDurationMin')
+    # Now the scatter plot will work as expected
+    figE = px.scatter(
+        dfS,
+        x="ReportLastUpdatedDate",
+        y="releaseDurationMin",
+        title="Release Duration over time"
+    )
+    return figE
 
 @callback(
     Output('lines', 'figure'),
@@ -378,12 +397,19 @@ def lines(_value):
 
 
 layout = html.Div([
-    html.H1("NW Genomic HIE Dashboard"),
-    dcc.Store(id='intermediate-value'),
-    html.Button('Load Data or Refresh', id='load-button'),
+    html.H1("Graphs (REST)"),
+    dbc.Row([
+        dcc.Store(id='intermediate-value'),
+        html.Button('Load Data or Refresh', id='load-button')
+    ]),
     dbc.Row([
         dbc.Col([
             dcc.Graph(id='lines'),
+        ]),
+    ]),
+    dbc.Row([
+        dbc.Col([
+            dcc.Graph(id='releaseLine'),
         ]),
     ]),
     dbc.Row([

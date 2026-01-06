@@ -8,7 +8,7 @@ import dash_bootstrap_components as dbc
 app = Dash(use_pages=True, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 app.layout = html.Div([
-    html.H1('Multi-page app with Dash Pages'),
+    html.H1('NHS North West Genomics HIE Dashboard'),
     html.Div([
         html.Div(
             dcc.Link(f"{page['name']} - {page['path']}", href=page["relative_path"])
