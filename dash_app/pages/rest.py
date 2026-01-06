@@ -483,6 +483,7 @@ def getInitialData():
     df['releaseDuration'] = (df['ReportLastUpdatedDate'] - df['ReportIssuedDate']).dt.days
     df['releaseDurationMin'] = (df['ReportLastUpdatedDate'] - df['ReportIssuedDate']).dt.total_seconds() / 60
     df['testingDuration'] = (df['ReportIssuedDate'] - df['SpecimenReceivedDate']).dt.days
+    df['testingDurationMinutes'] = (df['ReportIssuedDate'] - df['SpecimenReceivedDate']).dt.total_seconds() / 60
     df['OrderToSpecimenReceivedDuration'] = (df['SpecimenReceivedDate'] - df['OrderAuthoredOnDate']).dt.days
 
     #df['releaseDuration'] = df['releaseDuration'].fillna(-1)
