@@ -57,6 +57,11 @@ layout = html.Div([
     ]),
     dbc.Row([
         dbc.Col([
+            dcc.Graph(id='orderTimeLine'),
+        ]),
+    ]),
+    dbc.Row([
+        dbc.Col([
             dcc.Graph(id='specimens'),
         ]),
         dbc.Col([
@@ -201,9 +206,9 @@ def specimensByNHS(_value):
     datasets = json.loads(_value)
 
     df = pd.read_json(datasets['df'], orient='split')
-    dfS = df[['OrderAuthoredOnDate', 'OrderToSpecimenReceivedDuration', 'requesterCode']]
-    dfS = dfS.dropna(subset=['OrderAuthoredOnDate'])
-    dfS = dfS.groupby(['OrderAuthoredOnDate', 'OrderToSpecimenReceivedDuration', 'requesterCode']).size().reset_index(name='counts')
+    dfS = df[['OrderDate', 'OrderToSpecimenReceivedDuration', 'requesterCode']]
+    dfS = dfS.dropna(subset=['OrderDate'])
+    dfS = dfS.groupby(['OrderDate', 'OrderToSpecimenReceivedDuration', 'requesterCode']).size().reset_index(name='counts')
 
     # Now the scatter plot will work as expected
     figD = px.bar(
@@ -225,9 +230,9 @@ def specimensByCode(_value):
         return dash.no_update
     datasets = json.loads(_value)
     df = pd.read_json(datasets['df'], orient='split')
-    dfS = df[['OrderAuthoredOnDate', 'OrderToSpecimenReceivedDuration', 'codingCode']]
-    dfS = dfS.dropna(subset=['OrderAuthoredOnDate'])
-    dfS = dfS.groupby(['OrderAuthoredOnDate', 'OrderToSpecimenReceivedDuration', 'codingCode']).size().reset_index(name='counts')
+    dfS = df[['OrderDate', 'OrderToSpecimenReceivedDuration', 'codingCode']]
+    dfS = dfS.dropna(subset=['OrderDate'])
+    dfS = dfS.groupby(['OrderDate', 'OrderToSpecimenReceivedDuration', 'codingCode']).size().reset_index(name='counts')
 
     # Now the scatter plot will work as expected
     figD = px.bar(
@@ -261,6 +266,8 @@ def release(_value):
         title="Time from Report Release to Report Sent"
     )
     return figE
+
+
 @callback(
     Output('releaseLine', 'figure'),
     Input('intermediate-value', 'data')
@@ -278,7 +285,28 @@ def releaseLine(_value):
         dfS,
         x="ReportLastUpdatedDate",
         y="releaseDurationMin",
-        title="Time from Report Authorised to Report Sent"
+        title="Time from Report Authorised to Report Sent (minutes"
+    )
+    return figE
+
+@callback(
+    Output('orderTimeLine', 'figure'),
+    Input('intermediate-value', 'data')
+)
+def orderTimeLine(_value):
+    if _value is None:
+        return dash.no_update
+    datasets = json.loads(_value)
+    df = pd.read_json(datasets['df'], orient='split')
+    dfS = df[['OrderDate', 'OrderToSpecimenReceivedDuration']]
+    dfS = dfS.dropna(subset=['OrderDate'])
+    dfS = dfS.sort_values('OrderToSpecimenReceivedDuration')
+    # Now the scatter plot will work as expected
+    figE = px.scatter(
+        dfS,
+        x="OrderDate",
+        y="OrderToSpecimenReceivedDuration",
+        title="Time from Order Created to Specimen Received (days)"
     )
     return figE
 
@@ -300,7 +328,7 @@ def specimenTimeLine(_value):
         dfS,
         x="SpecimenReceivedDate",
         y="testingDuration",
-        title="Time from Specimen received to Report Authorised"
+        title="Time from Specimen received to Report Authorised (days)"
     )
     return figE
 
@@ -449,9 +477,9 @@ def getInitialData():
     dfSR = pd.DataFrame([vars(s) for s in serviceRequests])
     dfSR['requesterDisplay'] = dfSR['requester'].apply(requester)
     dfSR['requesterCode'] = dfSR['requester'].apply(requesterCode)
-    dfSR['OrderAuthoredOnDate'] = dfSR['authoredOn'].apply(issued)
+    dfSR['OrderDate'] = dfSR['authoredOn'].apply(issued)
 
-    dfServiceRequest = dfSR[['id','requesterDisplay','requesterCode','OrderAuthoredOnDate']]
+    dfServiceRequest = dfSR[['id','requesterDisplay','requesterCode','OrderDate']]
 
     df = pd.merge(
         dfDiagnosticReport,
@@ -475,16 +503,16 @@ def getInitialData():
 
 
     df['ReportIssuedDate'] = pd.to_datetime(df['ReportIssuedDate'], utc=True).dt.tz_localize(None)
-    df['OrderAuthoredOnDate'] = pd.to_datetime(df['OrderAuthoredOnDate'], utc=True).dt.tz_localize(None)
+    df['OrderDate'] = pd.to_datetime(df['OrderDate'], utc=True).dt.tz_localize(None)
     df['ReportLastUpdatedDate'] = pd.to_datetime(df['ReportLastUpdatedDate'], utc=True).dt.tz_localize(None)
 
-    df['requestedDuration'] = (df['ReportIssuedDate'] - df['OrderAuthoredOnDate']).dt.days
+    df['requestedDuration'] = (df['ReportIssuedDate'] - df['OrderDate']).dt.days
 
     df['releaseDuration'] = (df['ReportLastUpdatedDate'] - df['ReportIssuedDate']).dt.days
     df['releaseDurationMin'] = (df['ReportLastUpdatedDate'] - df['ReportIssuedDate']).dt.total_seconds() / 60
     df['testingDuration'] = (df['ReportIssuedDate'] - df['SpecimenReceivedDate']).dt.days
     df['testingDurationMinutes'] = (df['ReportIssuedDate'] - df['SpecimenReceivedDate']).dt.total_seconds() / 60
-    df['OrderToSpecimenReceivedDuration'] = (df['SpecimenReceivedDate'] - df['OrderAuthoredOnDate']).dt.days
+    df['OrderToSpecimenReceivedDuration'] = (df['SpecimenReceivedDate'] - df['OrderDate']).dt.days
 
     #df['releaseDuration'] = df['releaseDuration'].fillna(-1)
     #df['requestedDuration'] = df['requestedDuration'].fillna(-1)
@@ -495,7 +523,7 @@ def getInitialData():
 
     df['ReportSentDT'] = df['ReportLastUpdatedDate'].dt.date
     df['ReportIssuedDT'] = df['ReportIssuedDate'].dt.date
-    df['OrderAuthoredDT'] = df['OrderAuthoredOnDate'].dt.date
+    df['OrderAuthoredDT'] = df['OrderDate'].dt.date
     df['SpecimenReceivedDT'] = df['SpecimenReceivedDate'].dt.date
 
     dfReports = df.groupby(['requesterCode', 'codingCode']).size().reset_index(name='count')
@@ -504,7 +532,7 @@ def getInitialData():
 
     df['ReportSentDT'] = df['ReportLastUpdatedDate'].dt.date
     df['ReportIssuedDT'] = df['ReportIssuedDate'].dt.date
-    df['OrderAuthoredDT'] = df['OrderAuthoredOnDate'].dt.date
+    df['OrderAuthoredDT'] = df['OrderDate'].dt.date
     df['SpecimenReceivedDT'] = df['SpecimenReceivedDate'].dt.date
     return df
 
