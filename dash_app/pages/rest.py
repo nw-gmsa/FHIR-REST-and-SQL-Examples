@@ -295,7 +295,7 @@ def releaseLine(_value):
         dfS,
         x="ReportLastUpdatedDate",
         y="releaseDurationMin",
-        title="Time from Report Authorised to Report Sent (minutes"
+        title="Time from Report Authorised to Report Sent (minutes)"
     )
     return figE
 
@@ -332,7 +332,7 @@ def specimenTimeLine(_value):
     print("specimenTimeLine called")
     datasets = json.loads(_value)
     df = pd.read_json(io.StringIO(datasets['df']),orient='split')
-    dfS = df[['SpecimenReceivedDate', 'testingDuration']]
+    dfS = df[['SpecimenReceivedDate', 'testingDurationMinutes']]
     dfS = dfS.dropna(subset=['SpecimenReceivedDate'])
     dfS['SpecimenReceivedDate'] = pd.to_datetime(dfS['SpecimenReceivedDate'], utc=True).dt.tz_localize(None)
     dfS = dfS.sort_values('SpecimenReceivedDate')
@@ -341,8 +341,8 @@ def specimenTimeLine(_value):
     figE = px.scatter(
         dfS,
         x="SpecimenReceivedDate",
-        y="testingDuration",
-        title="Time from Specimen received to Report Authorised (days)"
+        y="testingDurationMinutes",
+        title="Time from Specimen received to Report Authorised (minutes)"
     )
     return figE
 
