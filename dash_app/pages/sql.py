@@ -11,44 +11,7 @@ import dash_bootstrap_components as dbc
 from datetime import datetime
 from dash_table import DataTable
 
-dash.register_page(__name__, path="/sql")
-
-def getData():
-    sql = """
-          select ResourceType, count(*) Total from HSFHIR_X0001_R.Rsrc group by ResourceType \
-          """
-
-    cursor.execute(sql)
-    data = cursor.fetchall()
-    column_names = [desc[0] for desc in cursor.description]
-    dfResource = pd.DataFrame(data, columns=column_names)
-
-    sql = """
-          select
-              dr.ID1
-               ,sr.requester_IdentifierValue ODS
-               ,org.phonetic name
-               ,org.partof_IdentifierValue ICS
-               ,parent.phonetic ICSName
-          from HSFHIR_X0001_S.DiagnosticReport dr                                             join HSFHIR_X0001_S_DiagnosticReport.basedOn drb on drb.Key = dr.Key               left outer join HSFHIR_X0001_S.ServiceRequest sr on drb.value_Reference=sr.key
-                                                                                              left outer join HSFHIR_X0001_S.Organization org on org.key = sr.requester_RelativeRef                                                             left outer join HSFHIR_X0001_S.Organization parent on parent.key = org.partof_Reference \
-          """
-
-    cursor.execute(sql)
-    data = cursor.fetchall()
-    column_names = [desc[0] for desc in cursor.description]
-    df = pd.DataFrame(data, columns=column_names)
-
-    dfOrg = df.groupby(['ODS','name']).size().reset_index(name='Total')
-    dfICS = df.groupby(['ICS','ICSName']).size().reset_index(name='Total')
-
-
-    datasets = {
-        'dfResource': dfResource.to_json(orient='split', date_format='iso'),
-        'dfOrg': dfOrg.to_json(orient='split', date_format='iso'),
-        'dfICS': dfICS.to_json(orient='split', date_format='iso')
-    }
-    return json.dumps(datasets)
+dash.register_page(__name__, title="Tables", name="Tables (SQL)",path="/tables")
 
 password = os.getenv("SQL_PASSWORD")
 user = os.getenv("SQL_USERNAME")
@@ -168,3 +131,41 @@ def update_metrics(n):
     print(n)
     updated = [html.P('Last updated ' +str(datetime.now()))]
     return updated,getData()
+
+def getData():
+    sql = """
+          select ResourceType, count(*) Total from HSFHIR_X0001_R.Rsrc group by ResourceType \
+          """
+
+    cursor.execute(sql)
+    data = cursor.fetchall()
+    column_names = [desc[0] for desc in cursor.description]
+    dfResource = pd.DataFrame(data, columns=column_names)
+
+    sql = """
+          select
+              dr.ID1
+               ,sr.requester_IdentifierValue ODS
+               ,org.phonetic name
+               ,org.partof_IdentifierValue ICS
+               ,parent.phonetic ICSName
+          from HSFHIR_X0001_S.DiagnosticReport dr                                             join HSFHIR_X0001_S_DiagnosticReport.basedOn drb on drb.Key = dr.Key               left outer join HSFHIR_X0001_S.ServiceRequest sr on drb.value_Reference=sr.key
+                                                                                              left outer join HSFHIR_X0001_S.Organization org on org.key = sr.requester_RelativeRef                                                             left outer join HSFHIR_X0001_S.Organization parent on parent.key = org.partof_Reference \
+          """
+
+    cursor.execute(sql)
+    data = cursor.fetchall()
+    column_names = [desc[0] for desc in cursor.description]
+    df = pd.DataFrame(data, columns=column_names)
+
+    dfOrg = df.groupby(['ODS','name']).size().reset_index(name='Total')
+    dfICS = df.groupby(['ICS','ICSName']).size().reset_index(name='Total')
+
+
+    datasets = {
+        'dfResource': dfResource.to_json(orient='split', date_format='iso'),
+        'dfOrg': dfOrg.to_json(orient='split', date_format='iso'),
+        'dfICS': dfICS.to_json(orient='split', date_format='iso')
+    }
+    return json.dumps(datasets)
+
