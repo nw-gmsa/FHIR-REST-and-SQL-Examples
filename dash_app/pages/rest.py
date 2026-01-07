@@ -89,6 +89,15 @@ layout = html.Div([
             dcc.Graph(id='reportsByTestCode'),
         ])
 
+    ]),
+    dbc.Row([
+        dbc.Col([
+            dcc.Graph(id='orderByRequester'),
+        ]),
+        dbc.Col([
+            dcc.Graph(id='orderByCICode'),
+        ])
+
     ])
 ])
 
@@ -164,6 +173,21 @@ def reportsByRequester(_value):
     return fig
 
 @callback(
+    Output('orderByRequester', 'figure'),
+    Input('intermediate-value', 'data'))
+def orderByRequester(_value):
+    if _value is None:
+        return dash.no_update
+    datasets = json.loads(_value)
+    df = pd.read_json(io.StringIO(datasets['df']),orient='split')
+    dfReports = df.groupby(['requesterCode', 'CICode']).size().reset_index(name='count')
+    dfReports.sort_values('count', inplace=True, ascending=False)
+
+    fig = px.bar(dfReports, x="requesterCode", y="count", color="CICode", title="Order by NHS Trust")
+
+    return fig
+
+@callback(
     Output('reportsByTestCode', 'figure'),
     Input('intermediate-value', 'data'))
 def reportsByTestCode(_value):
@@ -174,6 +198,18 @@ def reportsByTestCode(_value):
     df = pd.read_json(io.StringIO(datasets['df']),orient='split')
     dfReports = df.groupby(['requesterCode', 'codingCode']).size().reset_index(name='count')
     figTC = px.bar(dfReports, x="codingCode", y="count", color="requesterCode", title="Report Sent by Test Code")
+    return figTC
+
+@callback(
+    Output('orderByCICode', 'figure'),
+    Input('intermediate-value', 'data'))
+def orderByCICode(_value):
+    if _value is None:
+        return dash.no_update
+    datasets = json.loads(_value)
+    df = pd.read_json(io.StringIO(datasets['df']),orient='split')
+    dfReports = df.groupby(['requesterCode', 'CICode']).size().reset_index(name='count')
+    figTC = px.bar(dfReports, x="CICode", y="count", color="requesterCode", title="Order by CI Code")
     return figTC
 
 @callback(
@@ -377,15 +413,18 @@ def performerCode(my_list):
 def codeCode(concept):
     code = ""
     for coding in concept.coding:
-        code = coding.code
+        if coding.system == "https://fhir.nwgenomics.nhs.uk/CodeSystem/IGEAP":
+            code = coding.code
 
     return code
 def codeDisplay(concept):
     code = ""
     for coding in concept.coding:
-        code = coding.display
+        if coding.system == "https://fhir.nwgenomics.nhs.uk/CodeSystem/IGEAP":
+            code = coding.display
 
     return code
+
 
 def issued(issued):
     if issued == None:
@@ -423,6 +462,20 @@ def requesterCode(item):
         performer = item.identifier.value
     return performer
 
+def CICode(my_list):
+    code = None
+    if my_list != None:
+        for concept in my_list:
+            for coding in concept.coding:
+                code = coding.code
+    return code
+def CIDisplay(my_list):
+    code = None
+    if my_list != None:
+        for concept in my_list:
+            for coding in concept.coding:
+                code = coding.display
+    return code
 
 def getInitialData():
     print("getInitialData called")
@@ -493,8 +546,10 @@ def getInitialData():
     dfSR['requesterDisplay'] = dfSR['requester'].apply(requester)
     dfSR['requesterCode'] = dfSR['requester'].apply(requesterCode)
     dfSR['OrderDate'] = dfSR['authoredOn'].apply(issued)
+    dfSR['CICode'] = dfSR['reasonCode'].apply(CICode)
+    dfSR['CIDisplay'] = dfSR['reasonCode'].apply(CIDisplay)
 
-    dfServiceRequest = dfSR[['id','requesterDisplay','requesterCode','OrderDate']]
+    dfServiceRequest = dfSR[['id','requesterDisplay','requesterCode','OrderDate','CICode','CIDisplay']]
 
     df = pd.merge(
         dfDiagnosticReport,
