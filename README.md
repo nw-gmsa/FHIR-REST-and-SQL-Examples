@@ -4,5 +4,11 @@ This is a series of python examples demonstrating FHIR and Intersystems FHIR Rep
 - [FHIR REST Patient Examples](patientDashboardREST.ipynb) this is aimed at displaying orders and reports for a patient, also includes processing of PDF documents.
 - [SQL Examples](DashboardSQL.ipynb) 
 
+## Intersystems IRIS Python API
+
 For iris dpapi python package see https://github.com/intersystems-community/intersystems-irispython i.e.
 > pip3 install https://github.com/intersystems-community/intersystems-irispython/releases/download/3.9.3/intersystems_iris-3.9.3-py3-none-any.whl
+
+Note: this appears to now be https://pypi.org/project/intersystems-irispython with
+
+> pip3 install intersystems-irispython
