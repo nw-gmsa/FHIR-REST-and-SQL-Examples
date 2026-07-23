@@ -17,7 +17,7 @@ fhirclient==4.3.2
 Flask==3.1.2
 idna==3.11
 importlib_metadata==8.7.1
-intersystems-iris @ https://github.com/intersystems-community/intersystems-irispython/releases/download/3.9.3/intersystems_iris-3.9.3-py3-none-any.whl#sha256=089d39a9c51ee7f27b96aad836306c115e85a249b0d4a47caf7b17efa4ed8237
+#intersystems-iris @ https://github.com/intersystems-community/intersystems-irispython/releases/download/3.9.3/intersystems_iris-3.9.3-py3-none-any.whl#sha256=089d39a9c51ee7f27b96aad836306c115e85a249b0d4a47caf7b17efa4ed8237
 ipykernel==7.1.0
 ipython==9.9.0
 ipython_pygments_lexers==1.1.1
